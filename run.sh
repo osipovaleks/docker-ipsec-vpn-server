@@ -48,7 +48,7 @@ ip link delete dummy0 >/dev/null 2>&1
 mkdir -p /opt/src
 vpn_env="/opt/src/vpn.env"
 vpn_gen_env="/opt/src/vpn-gen.env"
-if [ -z "$VPN_IPSEC_PSK" ] && [ -z "$VPN_USER" ] && [ -z "$VPN_PASSWORD" ]; then
+if [ -z "$VPN_IPSEC_PSK" ]; then
   if [ -f "$vpn_env" ]; then
     echo
     echo 'Retrieving VPN credentials...'
@@ -61,12 +61,12 @@ if [ -z "$VPN_IPSEC_PSK" ] && [ -z "$VPN_USER" ] && [ -z "$VPN_PASSWORD" ]; then
     echo
     echo 'VPN credentials not set by user. Generating random PSK and password...'
     VPN_IPSEC_PSK=$(LC_CTYPE=C tr -dc 'A-HJ-NPR-Za-km-z2-9' < /dev/urandom | head -c 20)
-    VPN_USER=vpnuser
-    VPN_PASSWORD=$(LC_CTYPE=C tr -dc 'A-HJ-NPR-Za-km-z2-9' < /dev/urandom | head -c 16)
+    #VPN_USER=vpnuser
+    #VPN_PASSWORD=$(LC_CTYPE=C tr -dc 'A-HJ-NPR-Za-km-z2-9' < /dev/urandom | head -c 16)
 
     printf '%s\n' "VPN_IPSEC_PSK='$VPN_IPSEC_PSK'" > "$vpn_gen_env"
-    printf '%s\n' "VPN_USER='$VPN_USER'" >> "$vpn_gen_env"
-    printf '%s\n' "VPN_PASSWORD='$VPN_PASSWORD'" >> "$vpn_gen_env"
+    #printf '%s\n' "VPN_USER='$VPN_USER'" >> "$vpn_gen_env"
+    #printf '%s\n' "VPN_PASSWORD='$VPN_PASSWORD'" >> "$vpn_gen_env"
     chmod 600 "$vpn_gen_env"
   fi
 fi
@@ -74,24 +74,24 @@ fi
 # Remove whitespace and quotes around VPN variables, if any
 VPN_IPSEC_PSK=$(nospaces "$VPN_IPSEC_PSK")
 VPN_IPSEC_PSK=$(noquotes "$VPN_IPSEC_PSK")
-VPN_USER=$(nospaces "$VPN_USER")
-VPN_USER=$(noquotes "$VPN_USER")
-VPN_PASSWORD=$(nospaces "$VPN_PASSWORD")
-VPN_PASSWORD=$(noquotes "$VPN_PASSWORD")
+#VPN_USER=$(nospaces "$VPN_USER")
+#VPN_USER=$(noquotes "$VPN_USER")
+#VPN_PASSWORD=$(nospaces "$VPN_PASSWORD")
+#VPN_PASSWORD=$(noquotes "$VPN_PASSWORD")
 
-if [ -n "$VPN_ADDL_USERS" ] && [ -n "$VPN_ADDL_PASSWORDS" ]; then
-  VPN_ADDL_USERS=$(nospaces "$VPN_ADDL_USERS")
-  VPN_ADDL_USERS=$(noquotes "$VPN_ADDL_USERS")
-  VPN_ADDL_USERS=$(onespace "$VPN_ADDL_USERS")
-  VPN_ADDL_USERS=$(noquotes2 "$VPN_ADDL_USERS")
-  VPN_ADDL_PASSWORDS=$(nospaces "$VPN_ADDL_PASSWORDS")
-  VPN_ADDL_PASSWORDS=$(noquotes "$VPN_ADDL_PASSWORDS")
-  VPN_ADDL_PASSWORDS=$(onespace "$VPN_ADDL_PASSWORDS")
-  VPN_ADDL_PASSWORDS=$(noquotes2 "$VPN_ADDL_PASSWORDS")
-else
-  VPN_ADDL_USERS=""
-  VPN_ADDL_PASSWORDS=""
-fi
+#if [ -n "$VPN_ADDL_USERS" ] && [ -n "$VPN_ADDL_PASSWORDS" ]; then
+#  VPN_ADDL_USERS=$(nospaces "$VPN_ADDL_USERS")
+#  VPN_ADDL_USERS=$(noquotes "$VPN_ADDL_USERS")
+#  VPN_ADDL_USERS=$(onespace "$VPN_ADDL_USERS")
+#  VPN_ADDL_USERS=$(noquotes2 "$VPN_ADDL_USERS")
+#  VPN_ADDL_PASSWORDS=$(nospaces "$VPN_ADDL_PASSWORDS")
+#  VPN_ADDL_PASSWORDS=$(noquotes "$VPN_ADDL_PASSWORDS")
+#  VPN_ADDL_PASSWORDS=$(onespace "$VPN_ADDL_PASSWORDS")
+#  VPN_ADDL_PASSWORDS=$(noquotes2 "$VPN_ADDL_PASSWORDS")
+#else
+#  VPN_ADDL_USERS=""
+#  VPN_ADDL_PASSWORDS=""
+#fi
 
 if [ -n "$VPN_DNS_SRV1" ]; then
   VPN_DNS_SRV1=$(nospaces "$VPN_DNS_SRV1")
@@ -108,23 +108,23 @@ if [ -n "$VPN_PUBLIC_IP" ]; then
   VPN_PUBLIC_IP=$(noquotes "$VPN_PUBLIC_IP")
 fi
 
-if [ -z "$VPN_IPSEC_PSK" ] || [ -z "$VPN_USER" ] || [ -z "$VPN_PASSWORD" ]; then
-  exiterr "All VPN credentials must be specified. Edit your 'env' file and re-enter them."
-fi
+#if [ -z "$VPN_IPSEC_PSK" ] || [ -z "$VPN_USER" ] || [ -z "$VPN_PASSWORD" ]; then
+#  exiterr "All VPN credentials must be specified. Edit your 'env' file and re-enter them."
+#fi
 
-if printf '%s' "$VPN_IPSEC_PSK $VPN_USER $VPN_PASSWORD $VPN_ADDL_USERS $VPN_ADDL_PASSWORDS" | LC_ALL=C grep -q '[^ -~]\+'; then
-  exiterr "VPN credentials must not contain non-ASCII characters."
-fi
+#if printf '%s' "$VPN_IPSEC_PSK" | LC_ALL=C grep -q '[^ -~]\+'; then
+#  exiterr "VPN credentials must not contain non-ASCII characters."
+#fi
 
-case "$VPN_IPSEC_PSK $VPN_USER $VPN_PASSWORD $VPN_ADDL_USERS $VPN_ADDL_PASSWORDS" in
-  *[\\\"\']*)
-    exiterr "VPN credentials must not contain these special characters: \\ \" '"
-    ;;
-esac
+#case "$VPN_IPSEC_PSK $VPN_USER $VPN_PASSWORD $VPN_ADDL_USERS $VPN_ADDL_PASSWORDS" in
+#  *[\\\"\']*)
+#    exiterr "VPN credentials must not contain these special characters: \\ \" '"
+#    ;;
+#esac
 
-if printf '%s' "$VPN_USER $VPN_ADDL_USERS" | tr ' ' '\n' | sort | uniq -c | grep -qv '^ *1 '; then
-  exiterr "VPN usernames must not contain duplicates."
-fi
+#if printf '%s' "$VPN_USER $VPN_ADDL_USERS" | tr ' ' '\n' | sort | uniq -c | grep -qv '^ *1 '; then
+#  exiterr "VPN usernames must not contain duplicates."
+#fi
 
 # Check DNS servers and try to resolve hostnames to IPs
 if [ -n "$VPN_DNS_SRV1" ]; then
@@ -162,8 +162,8 @@ check_ip "$PUBLIC_IP" || exiterr "Cannot detect this server's public IP. Define 
 L2TP_NET=${VPN_L2TP_NET:-'192.168.42.0/24'}
 L2TP_LOCAL=${VPN_L2TP_LOCAL:-'192.168.42.1'}
 L2TP_POOL=${VPN_L2TP_POOL:-'192.168.42.10-192.168.42.250'}
-XAUTH_NET=${VPN_XAUTH_NET:-'192.168.43.0/24'}
-XAUTH_POOL=${VPN_XAUTH_POOL:-'192.168.43.10-192.168.43.250'}
+#XAUTH_NET=${VPN_XAUTH_NET:-'192.168.43.0/24'}
+#XAUTH_POOL=${VPN_XAUTH_POOL:-'192.168.43.10-192.168.43.250'}
 DNS_SRV1=${VPN_DNS_SRV1:-'8.8.8.8'}
 DNS_SRV2=${VPN_DNS_SRV2:-'8.8.4.4'}
 DNS_SRVS="\"$DNS_SRV1 $DNS_SRV2\""
@@ -193,7 +193,8 @@ cat > /etc/ipsec.conf <<EOF
 version 2.0
 
 config setup
-  virtual-private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:!$L2TP_NET,%v4:!$XAUTH_NET
+  virtual-private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:!$L2TP_NET
+  #virtual-private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:!$L2TP_NET,%v4:!$XAUTH_NET
   protostack=netkey
   interfaces=%defaultroute
   uniqueids=no
@@ -223,20 +224,20 @@ conn l2tp-psk
   phase2=esp
   also=shared
 
-conn xauth-psk
-  auto=add
-  leftsubnet=0.0.0.0/0
-  rightaddresspool=$XAUTH_POOL
-  modecfgdns=$DNS_SRVS
-  leftxauthserver=yes
-  rightxauthclient=yes
-  leftmodecfgserver=yes
-  rightmodecfgclient=yes
-  modecfgpull=yes
-  xauthby=file
-  ike-frag=yes
-  cisco-unity=yes
-  also=shared
+#conn xauth-psk
+#  auto=add
+#  leftsubnet=0.0.0.0/0
+#  rightaddresspool=$XAUTH_POOL
+#  modecfgdns=$DNS_SRVS
+#  leftxauthserver=yes
+#  rightxauthclient=yes
+#  leftmodecfgserver=yes
+#  rightmodecfgclient=yes
+#  modecfgpull=yes
+#  xauthby=file
+#  ike-frag=yes
+#  cisco-unity=yes
+#  also=shared
 
 include /etc/ipsec.d/*.conf
 EOF
@@ -289,32 +290,32 @@ EOF
 fi
 
 # Create VPN credentials
-cat > /etc/ppp/chap-secrets <<EOF
-"$VPN_USER" l2tpd "$VPN_PASSWORD" *
-EOF
+#cat > /etc/ppp/chap-secrets <<EOF
+#"$VPN_USER" l2tpd "$VPN_PASSWORD" *
+#EOF
 
-VPN_PASSWORD_ENC=$(openssl passwd -1 "$VPN_PASSWORD")
-cat > /etc/ipsec.d/passwd <<EOF
-$VPN_USER:$VPN_PASSWORD_ENC:xauth-psk
-EOF
+#VPN_PASSWORD_ENC=$(openssl passwd -1 "$VPN_PASSWORD")
+#cat > /etc/ipsec.d/passwd <<EOF
+#$VPN_USER:$VPN_PASSWORD_ENC:xauth-psk
+#EOF
 
-if [ -n "$VPN_ADDL_USERS" ] && [ -n "$VPN_ADDL_PASSWORDS" ]; then
-  count=1
-  addl_user=$(printf '%s' "$VPN_ADDL_USERS" | cut -d ' ' -f 1)
-  addl_password=$(printf '%s' "$VPN_ADDL_PASSWORDS" | cut -d ' ' -f 1)
-  while [ -n "$addl_user" ] && [ -n "$addl_password" ]; do
-    addl_password_enc=$(openssl passwd -1 "$addl_password")
-cat >> /etc/ppp/chap-secrets <<EOF
-"$addl_user" l2tpd "$addl_password" *
-EOF
-cat >> /etc/ipsec.d/passwd <<EOF
-$addl_user:$addl_password_enc:xauth-psk
-EOF
-    count=$((count+1))
-    addl_user=$(printf '%s' "$VPN_ADDL_USERS" | cut -s -d ' ' -f "$count")
-    addl_password=$(printf '%s' "$VPN_ADDL_PASSWORDS" | cut -s -d ' ' -f "$count")
-  done
-fi
+#if [ -n "$VPN_ADDL_USERS" ] && [ -n "$VPN_ADDL_PASSWORDS" ]; then
+#  count=1
+#  addl_user=$(printf '%s' "$VPN_ADDL_USERS" | cut -d ' ' -f 1)
+#  addl_password=$(printf '%s' "$VPN_ADDL_PASSWORDS" | cut -d ' ' -f 1)
+#  while [ -n "$addl_user" ] && [ -n "$addl_password" ]; do
+#    addl_password_enc=$(openssl passwd -1 "$addl_password")
+#cat >> /etc/ppp/chap-secrets <<EOF
+#"$addl_user" l2tpd "$addl_password" *
+#EOF
+#cat >> /etc/ipsec.d/passwd <<EOF
+#$addl_user:$addl_password_enc:xauth-psk
+#EOF
+#    count=$((count+1))
+#    addl_user=$(printf '%s' "$VPN_ADDL_USERS" | cut -s -d ' ' -f "$count")
+#    addl_password=$(printf '%s' "$VPN_ADDL_PASSWORDS" | cut -s -d ' ' -f "$count")
+#  done
+#fi
 
 # Update sysctl settings
 SYST='/sbin/sysctl -e -q -w'
@@ -351,15 +352,20 @@ iptables -I INPUT 6 -p udp --dport 1701 -j DROP
 iptables -I FORWARD 1 -m conntrack --ctstate INVALID -j DROP
 iptables -I FORWARD 2 -i eth+ -o ppp+ -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 iptables -I FORWARD 3 -i ppp+ -o eth+ -j ACCEPT
+#iptables -I FORWARD 2 -i ppp+ -o ppp+ -s "$L2TP_NET" -d "$L2TP_NET" -j DROP
 iptables -I FORWARD 4 -i ppp+ -o ppp+ -s "$L2TP_NET" -d "$L2TP_NET" -j ACCEPT
-iptables -I FORWARD 5 -i eth+ -d "$XAUTH_NET" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-iptables -I FORWARD 6 -s "$XAUTH_NET" -o eth+ -j ACCEPT
+iptables -I FORWARD 5 -i vboxnet+ -o ppp+ -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+iptables -I FORWARD 6 -i ppp+ -o vboxnet+ -j ACCEPT
+#iptables -I FORWARD 5 -i eth+ -d "$XAUTH_NET" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+#iptables -I FORWARD 6 -s "$XAUTH_NET" -o eth+ -j ACCEPT
 # Uncomment to disallow traffic between VPN clients
 # iptables -I FORWARD 2 -i ppp+ -o ppp+ -s "$L2TP_NET" -d "$L2TP_NET" -j DROP
 # iptables -I FORWARD 3 -s "$XAUTH_NET" -d "$XAUTH_NET" -j DROP
+#iptables -A FORWARD -i vboxnet+ -o ppp+ -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+#iptables -A FORWARD -i ppp+ -o vboxnet+ -j ACCEPT
 iptables -A FORWARD -j DROP
-iptables -t nat -I POSTROUTING -s "$XAUTH_NET" -o eth+ -m policy --dir out --pol none -j MASQUERADE
-iptables -t nat -I POSTROUTING -s "$L2TP_NET" -o eth+ -j MASQUERADE
+#iptables -t nat -I POSTROUTING -s "$XAUTH_NET" -o eth+ -m policy --dir out --pol none -j MASQUERADE
+#iptables -t nat -I POSTROUTING -s "$L2TP_NET" -o eth+ -j MASQUERADE
 
 case $VPN_ANDROID_MTU_FIX in
   [yY][eE][sS])
@@ -376,7 +382,8 @@ case $VPN_ANDROID_MTU_FIX in
 esac
 
 # Update file attributes
-chmod 600 /etc/ipsec.secrets /etc/ppp/chap-secrets /etc/ipsec.d/passwd
+#chmod 600 /etc/ipsec.secrets /etc/ppp/chap-secrets /etc/ipsec.d/passwd
+chmod 600 /etc/ipsec.secrets
 
 cat <<EOF
 
